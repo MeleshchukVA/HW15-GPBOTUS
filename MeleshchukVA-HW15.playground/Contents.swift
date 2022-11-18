@@ -5,13 +5,13 @@ import UIKit
 
 func testQueue() {
     print("1") // 1 выводится в консоль первым, т.к выполняется синхронно.
-
+    
     DispatchQueue.main.async {
         print("2") // 2 выводится после 1 и 9, т.к. выполняется асинхронно.
-
+        
         DispatchQueue.global(qos: .background).sync {
             print("3") // 3 выведется после 2, т.к выполняется синхронно.
-
+            
             DispatchQueue.main.sync { // Дедлок из-за main.sync, ничего не выведится в консоль в скобках.
                 print("4")
                 
@@ -20,13 +20,13 @@ func testQueue() {
                 }
                 print("6")
             }
-
+            
             print("7") // Не выведется в консоль из-за deadlock'а выше.
         }
-
+        
         print("8") // Не выведется в консоль из-за deadlock'а выше.
     }
-
+    
     print("9") // 9 выводится в консоль после 1, т.к выполняется синхронно.
 }
 
@@ -40,49 +40,50 @@ func testQueue() {
 
 func printSerialQueue() {
     let serialQueue = DispatchQueue(label: "serial")
-
+    let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
+    
     print("1")
-
+    
     serialQueue.async {
         print("2")
-
-        DispatchQueue.global(qos: .background).sync {
+        
+        concurrentQueue.sync {
             print("3")
-
+            
             serialQueue.sync { // Дедлок их-за main.sync, ничего не выведится в консоль в скобках.
                 print("4")
                 
-                DispatchQueue.global(qos: .background).async {
+                concurrentQueue.async {
                     print("5")
                 }
                 print("6")
             }
-
+            
             print("7") // Не выведется в консоль из-за deadlock'а выше.
         }
-
+        
         print("8") // Не выведется в консоль из-за deadlock'а выше.
     }
-
+    
     print("9")
 }
 
 // Результат отличен от testQueue().
 // Известно только, что print("1") всегда будет выполняться первым, т.к. выполняется синхронно.
-// Дальше принтится либо 9, 2, 3, либо 2, 3, 9 из-за непредсказуемости результата серийной очереди, выполняющейся асинхронно.
+// Дальше принтится либо 9, 2, 3, либо 2, 3, 9, либо 2, 9, 3 из-за непредсказуемости результата серийной очереди, выполняющейся асинхронно.
 //printSerialQueue()
 
 func printConcurrentQueue() {
     let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
-
+    
     print("1")
-
+    
     DispatchQueue.main.async {
         print("2")
-
+        
         concurrentQueue.sync {
             print("3")
-
+            
             DispatchQueue.main.sync {
                 print("4")
                 
@@ -91,13 +92,13 @@ func printConcurrentQueue() {
                 }
                 print("6")
             }
-
+            
             print("7")
         }
-
+        
         print("8")
     }
-
+    
     print("9")
 }
 
@@ -110,15 +111,15 @@ func printConcurrentQueue() {
 
 func printNoDeadlockConcurrentQueue() {
     let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
-
+    
     print("1")
-
+    
     DispatchQueue.main.async {
         print("2")
-
+        
         concurrentQueue.sync {
             print("3")
-
+            
             DispatchQueue.main.async {
                 print("4")
                 DispatchQueue.global(qos: .background).async {
@@ -126,13 +127,13 @@ func printNoDeadlockConcurrentQueue() {
                 }
                 print("6")
             }
-
+            
             print("7")
         }
-
+        
         print("8")
     }
-
+    
     print("9")
 }
 
@@ -145,15 +146,15 @@ func printNoDeadlockConcurrentQueue() {
 
 func printConcurrentToSerialQueue() {
     let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
-
+    
     print("1")
-
-    concurrentQueue.async {
+    
+    DispatchQueue.main.async(flags: .barrier) {
         print("2")
-
-        DispatchQueue.main.sync {
+        
+        concurrentQueue.sync {
             print("3")
-
+            
             DispatchQueue.main.sync {
                 print("4")
                 
@@ -162,14 +163,14 @@ func printConcurrentToSerialQueue() {
                 }
                 print("6")
             }
-
+            
             print("7")
         }
-
+        
         print("8")
     }
-
+    
     print("9")
 }
 
-printConcurrentToSerialQueue() // Результат такой же, как и в printSerialQueue().
+printConcurrentToSerialQueue()
