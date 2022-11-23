@@ -147,30 +147,32 @@ func printNoDeadlockConcurrentQueue() {
 func printConcurrentToSerialQueue() {
     let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
     
-    print("1")
-    
     DispatchQueue.main.async(flags: .barrier) {
-        print("2")
+        print("1")
         
-        concurrentQueue.sync {
-            print("3")
+        DispatchQueue.main.async {
+            print("2")
             
-            DispatchQueue.main.sync {
-                print("4")
+            concurrentQueue.sync {
+                print("3")
                 
-                DispatchQueue.global(qos: .background).async {
-                    print("5")
+                DispatchQueue.main.sync {
+                    print("4")
+                    
+                    DispatchQueue.global(qos: .background).async {
+                        print("5")
+                    }
+                    print("6")
                 }
-                print("6")
+                
+                print("7")
             }
             
-            print("7")
+            print("8")
         }
         
-        print("8")
+        print("9")
     }
-    
-    print("9")
 }
 
 printConcurrentToSerialQueue()
